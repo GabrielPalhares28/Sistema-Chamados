@@ -7,14 +7,13 @@ import {
   ListItemText,
   Button,
   IconButton,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
-
-// Importe sua logo (altere o caminho para o correto)
 import Logo from "../assets/cerne-logo.png";
 
-// Definição da interface para os tickets
 interface Ticket {
   id: number;
   descricao: string;
@@ -24,11 +23,14 @@ interface Ticket {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedType, setSelectedType] = useState<string>("all");
 
   // Carregar os tickets do localStorage ao montar o componente
   useEffect(() => {
     const savedTicketsString = localStorage.getItem("chamados");
-    const savedTickets: Ticket[] = savedTicketsString ? JSON.parse(savedTicketsString) : [];
+    const savedTickets: Ticket[] = savedTicketsString
+      ? JSON.parse(savedTicketsString)
+      : [];
     setTickets(savedTickets);
   }, []);
 
@@ -39,6 +41,21 @@ const Dashboard: React.FC = () => {
     localStorage.setItem("chamados", JSON.stringify(updatedTickets));
   };
 
+  // Contar chamados por tipo
+  const ticketCounts = tickets.reduce(
+    (acc, ticket) => {
+      acc[ticket.tipo] = (acc[ticket.tipo] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  // Filtrar chamados com base no tipo selecionado
+  const filteredTickets =
+    selectedType === "all"
+      ? tickets
+      : tickets.filter((ticket) => ticket.tipo === selectedType);
+
   return (
     <Box
       display="flex"
@@ -47,11 +64,10 @@ const Dashboard: React.FC = () => {
       justifyContent="center"
       height="100vh"
       sx={{
-        background: "linear-gradient(180deg, #ffffff, #f0f4ff)", // Fundo gradiente
+        background: "linear-gradient(180deg, #ffffff, #f0f4ff)",
         padding: 2,
       }}
     >
-      {/* Card principal */}
       <Box
         width="100%"
         maxWidth={700}
@@ -60,19 +76,12 @@ const Dashboard: React.FC = () => {
         borderRadius={3}
         boxShadow={3}
       >
-        {/* Cabeçalho com logo, título e subtítulo */}
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="flex-start"
-          gap={2} // Espaçamento entre a logo e o texto
-          mb={3}
-        >
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Box
             component="img"
             src={Logo}
             alt="Logo CERNE"
-            sx={{ width: 80 }} // Tamanho da logo ajustado
+            sx={{ width: 80 }}
           />
           <Box>
             <Typography
@@ -97,9 +106,45 @@ const Dashboard: React.FC = () => {
           </Box>
         </Box>
 
-        {tickets.length > 0 ? (
+        {/* Contador de chamados */}
+        <Box
+          mb={3}
+          p={2}
+          borderRadius={2}
+          bgcolor="#f0f4ff"
+          boxShadow={1}
+        >
+          <Typography variant="h6" fontWeight="bold" color="#2F54EB">
+            Resumo dos Chamados
+          </Typography>
+          <Typography color="#555">
+            {Object.entries(ticketCounts).map(([tipo, count]) => (
+              <div key={tipo}>
+                {`${tipo.charAt(0).toUpperCase() + tipo.slice(1)}: ${count}`}
+              </div>
+            ))}
+            {tickets.length === 0 && <div>Nenhum chamado registrado.</div>}
+          </Typography>
+        </Box>
+
+        {/* Filtro por tipo */}
+        <Box mb={3}>
+          <Select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            fullWidth
+            displayEmpty
+          >
+            <MenuItem value="all">Todos os Tipos</MenuItem>
+            <MenuItem value="manutencao">Manutenção</MenuItem>
+            <MenuItem value="limpeza">Limpeza</MenuItem>
+            <MenuItem value="abastecimento">Abastecimento</MenuItem>
+          </Select>
+        </Box>
+
+        {filteredTickets.length > 0 ? (
           <List>
-            {tickets.map((ticket) => (
+            {filteredTickets.map((ticket) => (
               <ListItem
                 key={ticket.id}
                 divider
@@ -131,43 +176,39 @@ const Dashboard: React.FC = () => {
             Nenhum chamado encontrado.
           </Typography>
         )}
-        <Box mt={3} display="flex" justifyContent="space-between" gap={2}>
-          <Button
-            variant="contained"
-            fullWidth
-            sx={{
-              borderRadius: 8,
-              fontWeight: "bold",
-              fontSize: "0.85rem", // Reduzi o tamanho da fonte
-              padding: "8px 0", // Ajustei o padding para um design mais compacto
-              bgcolor: "#2F54EB",
-              ":hover": {
-                bgcolor: "#1d3bc2",
-              },
-            }}
-            onClick={() => navigate("/new-ticket")}
-          >
-            Novo Chamado
-          </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            sx={{
-              borderRadius: 8,
-              fontWeight: "bold",
-              fontSize: "0.85rem", // Mesma redução aqui
-              padding: "8px 0",
-              color: "#2F54EB",
-              borderColor: "#2F54EB",
-              ":hover": {
-                bgcolor: "#f0f4ff",
-              },
-            }}
-            onClick={() => navigate("/")}
-          >
-            Sair
-          </Button>
-        </Box>
+
+        {/* Botão de novo chamado */}
+        <Button
+          variant="contained"
+          fullWidth
+          sx={{
+            marginTop: 2,
+            background: "#071a5f",
+            color: "#fff",
+            "&:hover": {
+              background: "#2F54EB",
+            },
+          }}
+          onClick={() => navigate("/new-ticket")}
+        >
+          Novo Chamado
+        </Button>
+
+        <Button
+          variant="outlined"
+          fullWidth
+          sx={{
+            marginTop: 2,
+            color: "#071a5f",
+            borderColor: "#071a5f",
+            "&:hover": {
+              background: "#f0f4ff",
+            },
+          }}
+          onClick={() => navigate("/")}
+        >
+          Voltar
+        </Button>
       </Box>
     </Box>
   );

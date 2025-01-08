@@ -1,13 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box, TextField, Button, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import cerneLogo from "../assets/cerne-logo.png"; // Certifique-se de que a imagem está em src/assets
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
+  // Função para verificar as credenciais
   const handleLogin = () => {
-    navigate("/dashboard");
+    const validEmail = "gabrielpalhares764@gmail.com";
+    const validPassword = "12345";
+
+    // Verificando se o e-mail e senha correspondem
+    if (email === validEmail && password === validPassword) {
+      setError(""); // Limpa a mensagem de erro
+      navigate("/dashboard"); // Redireciona para o Dashboard
+    } else {
+      setError("Usuário ou senha incorretos."); // Exibe mensagem de erro
+    }
   };
 
   return (
@@ -80,6 +93,8 @@ const Login: React.FC = () => {
           fullWidth
           label="Usuário"
           variant="outlined"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           InputProps={{
             style: { borderRadius: 8 },
           }}
@@ -89,10 +104,21 @@ const Login: React.FC = () => {
           label="Senha"
           type="password"
           variant="outlined"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           InputProps={{
             style: { borderRadius: 8 },
           }}
         />
+        {error && (
+          <Typography
+            variant="body2"
+            color="error"
+            sx={{ marginTop: 1, textAlign: "center" }}
+          >
+            {error}
+          </Typography>
+        )}
         <Button
           variant="contained"
           fullWidth

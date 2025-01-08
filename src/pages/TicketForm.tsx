@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, MenuItem } from "@mui/material";
+import { Box, TextField, Button, Typography, MenuItem, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import cerneLogo from "../assets/cerne-logo.png"; // Certifique-se de que a imagem está no caminho correto
 
@@ -8,8 +8,14 @@ const NovoChamado: React.FC = () => {
 
   const [descricao, setDescricao] = useState<string>("");
   const [tipo, setTipo] = useState<string>("");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const handleSave = () => {
+    if (!descricao || !tipo) {
+      setFeedback({ type: "error", message: "Preencha todos os campos antes de salvar." });
+      return;
+    }
+
     const savedTicketsString = localStorage.getItem("chamados");
     const savedTickets = savedTicketsString ? JSON.parse(savedTicketsString) : [];
 
@@ -21,7 +27,10 @@ const NovoChamado: React.FC = () => {
 
     localStorage.setItem("chamados", JSON.stringify([...savedTickets, newTicket]));
 
-    navigate("/dashboard");
+    setFeedback({ type: "success", message: "Chamado salvo com sucesso!" });
+
+    // Redirecionar após um curto intervalo
+    setTimeout(() => navigate("/dashboard"), 2000);
   };
 
   return (
@@ -115,6 +124,13 @@ const NovoChamado: React.FC = () => {
           <MenuItem value="limpeza">Limpeza</MenuItem>
           <MenuItem value="abastecimento">Abastecimento</MenuItem>
         </TextField>
+
+        {/* Feedback Visual */}
+        {feedback && (
+          <Alert severity={feedback.type} onClose={() => setFeedback(null)}>
+            {feedback.message}
+          </Alert>
+        )}
 
         {/* Botões */}
         <Button
