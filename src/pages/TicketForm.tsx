@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, MenuItem, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; // Biblioteca para requisições HTTP
 import cerneLogo from "../assets/cerne-logo.png"; // Certifique-se de que a imagem está no caminho correto
 
 const NovoChamado: React.FC = () => {
@@ -9,28 +10,37 @@ const NovoChamado: React.FC = () => {
   const [descricao, setDescricao] = useState<string>("");
   const [tipo, setTipo] = useState<string>("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false); // Para exibir estado de carregamento
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!descricao || !tipo) {
       setFeedback({ type: "error", message: "Preencha todos os campos antes de salvar." });
       return;
     }
 
-    const savedTicketsString = localStorage.getItem("chamados");
-    const savedTickets = savedTicketsString ? JSON.parse(savedTicketsString) : [];
+    setIsLoading(true);
 
-    const newTicket = {
-      id: savedTickets.length + 1,
-      descricao,
-      tipo,
-    };
+    try {
+      // Enviar o chamado para o backend com a URL corrigida
+      const response = await axios.post("http://localhost:3000/chamados", {
+        descricao,
+        tipo,
+      });
 
-    localStorage.setItem("chamados", JSON.stringify([...savedTickets, newTicket]));
+      if (response.status === 201) {
+        setFeedback({ type: "success", message: "Chamado salvo com sucesso!" });
 
-    setFeedback({ type: "success", message: "Chamado salvo com sucesso!" });
-
-    // Redirecionar após um curto intervalo
-    setTimeout(() => navigate("/dashboard"), 2000);
+        // Redirecionar após um curto intervalo
+        setTimeout(() => navigate("/dashboard"), 2000);
+      } else {
+        throw new Error("Erro ao salvar chamado");
+      }
+    } catch (error) {
+      setFeedback({ type: "error", message: "Ocorreu um erro ao salvar o chamado. Tente novamente." });
+      console.error("Erro ao salvar chamado:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -138,6 +148,7 @@ const NovoChamado: React.FC = () => {
           fullWidth
           color="primary"
           onClick={handleSave}
+          disabled={isLoading}
           sx={{
             borderRadius: 8,
             padding: "10px 0",
@@ -148,7 +159,7 @@ const NovoChamado: React.FC = () => {
             },
           }}
         >
-          Salvar
+          {isLoading ? "Salvando..." : "Salvar"}
         </Button>
         <Button
           variant="outlined"
