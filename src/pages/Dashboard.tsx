@@ -13,6 +13,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
 import Logo from "../assets/cerne-logo.png";
+import axios from "axios";
 
 interface Ticket {
   id: number;
@@ -25,20 +26,39 @@ const Dashboard: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedType, setSelectedType] = useState<string>("all");
 
-  // Carregar os tickets do localStorage ao montar o componente
+  // Carregar os tickets do backend ao montar o componente
   useEffect(() => {
-    const savedTicketsString = localStorage.getItem("chamados");
-    const savedTickets: Ticket[] = savedTicketsString
-      ? JSON.parse(savedTicketsString)
-      : [];
-    setTickets(savedTickets);
+    axios
+      .get("http://localhost:3000/chamados") // A URL da sua API backend
+      .then((response) => {
+        console.log("Dados recebidos:", response.data); // Log para depuração
+        const formattedData = response.data.map((ticket: any) => ({
+          id: ticket.id,
+          descricao: ticket.descricao,
+          tipo: ticket.tipo,
+        })); // Formatação dos dados, se necessário
+        setTickets(formattedData);
+      })
+      .catch((error) => {
+        console.error("Erro ao carregar os chamados:", error);
+      });
   }, []);
 
   // Função para excluir um ticket
   const handleDelete = (id: number) => {
+    // Filtra a lista para remover o ticket excluído
     const updatedTickets = tickets.filter((ticket) => ticket.id !== id);
-    setTickets(updatedTickets);
-    localStorage.setItem("chamados", JSON.stringify(updatedTickets));
+    setTickets(updatedTickets); // Atualiza a lista no estado
+
+    // Exclui o ticket no backend
+    axios
+      .delete(`http://localhost:3000/chamados/${id}`)
+      .then(() => {
+        console.log("Chamado excluído com sucesso");
+      })
+      .catch((error) => {
+        console.error("Erro ao excluir chamado:", error);
+      });
   };
 
   // Contar chamados por tipo
@@ -55,6 +75,8 @@ const Dashboard: React.FC = () => {
     selectedType === "all"
       ? tickets
       : tickets.filter((ticket) => ticket.tipo === selectedType);
+
+  console.log("Tickets filtrados:", filteredTickets); // Log para depuração
 
   return (
     <Box
@@ -77,12 +99,7 @@ const Dashboard: React.FC = () => {
         boxShadow={3}
       >
         <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <Box
-            component="img"
-            src={Logo}
-            alt="Logo CERNE"
-            sx={{ width: 80 }}
-          />
+          <Box component="img" src={Logo} alt="Logo CERNE" sx={{ width: 80 }} />
           <Box>
             <Typography
               variant="h5"
@@ -107,13 +124,7 @@ const Dashboard: React.FC = () => {
         </Box>
 
         {/* Contador de chamados */}
-        <Box
-          mb={3}
-          p={2}
-          borderRadius={2}
-          bgcolor="#f0f4ff"
-          boxShadow={1}
-        >
+        <Box mb={3} p={2} borderRadius={2} bgcolor="#f0f4ff" boxShadow={1}>
           <Typography variant="h6" fontWeight="bold" color="#2F54EB">
             Resumo dos Chamados
           </Typography>

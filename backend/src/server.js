@@ -24,14 +24,24 @@ app.get('/', async (req, res) => {
 
 // Rota para criar um novo chamado
 app.post('/chamados', async (req, res) => {
+  console.log('Dados recebidos:', req.body);  // Log de depuração para verificar os dados recebidos
+
+  const { descricao, tipo, status } = req.body;
+  
+  // Verificação de campos obrigatórios
+  if (!descricao || !tipo) {
+    return res.status(400).send('Descrição e tipo são obrigatórios.');
+  }
+
   try {
     const novoChamado = await Chamado.create({
-      descricao: req.body.descricao, // Recebe a descrição do corpo da requisição
-      tipo: req.body.tipo,           // Recebe o tipo do corpo da requisição
-      status: req.body.status || 'Aberto', // Status padrão: Aberto
+      descricao,
+      tipo,
+      status: status || 'Aberto',
     });
     res.status(201).json(novoChamado);
   } catch (error) {
+    console.error('Erro ao criar chamado:', error);  // Log de erro
     res.status(500).send('Erro ao criar chamado: ' + error.message);
   }
 });
@@ -42,7 +52,36 @@ app.get('/chamados', async (req, res) => {
     const chamados = await Chamado.findAll(); // Busca todos os chamados
     res.json(chamados);
   } catch (error) {
+    console.error('Erro ao listar chamados:', error);  // Log de erro
     res.status(500).send('Erro ao listar chamados: ' + error.message);
+  }
+});
+
+// Rota para atualizar um chamado existente
+app.put('/chamados/:id', async (req, res) => {
+  const { id } = req.params; // Obtém o ID do chamado na URL
+  const { descricao, tipo, status } = req.body; // Obtém os dados enviados no corpo da requisição
+
+  try {
+    // Busca o chamado pelo ID
+    const chamado = await Chamado.findByPk(id);
+
+    if (!chamado) {
+      return res.status(404).json({ message: 'Chamado não encontrado.' });
+    }
+
+    // Atualiza os campos do chamado, se forem enviados
+    chamado.descricao = descricao || chamado.descricao;
+    chamado.tipo = tipo || chamado.tipo;
+    chamado.status = status || chamado.status;
+
+    // Salva as alterações no banco de dados
+    await chamado.save();
+
+    res.status(200).json({ message: 'Chamado atualizado com sucesso!', chamado });
+  } catch (error) {
+    console.error('Erro ao atualizar chamado:', error); // Log de erro
+    res.status(500).json({ message: 'Erro ao atualizar chamado: ' + error.message });
   }
 });
 
@@ -53,7 +92,7 @@ app.listen(PORT, async () => {
 
   // Tenta sincronizar o banco de dados
   try {
-    await sequelize.sync(); // Sincroniza os modelos com o banco de dados
+    await sequelize.sync({ alter: true }); // Sincroniza os modelos com o banco de dados
     console.log('Banco de dados sincronizado');
   } catch (error) {
     console.error('Erro ao sincronizar o banco de dados:', error);
