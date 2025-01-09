@@ -24,19 +24,18 @@ interface Ticket {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [completedTickets, setCompletedTickets] = useState<Ticket[]>([]); // Adicionado estado para chamados concluídos
   const [selectedType, setSelectedType] = useState<string>("all");
 
-  // Carregar os tickets do backend ao montar o componente
   useEffect(() => {
     axios
       .get("http://localhost:3000/chamados") // A URL da sua API backend
       .then((response) => {
-        console.log("Dados recebidos:", response.data); // Log para depuração
         const formattedData = response.data.map((ticket: any) => ({
           id: ticket.id,
           descricao: ticket.descricao,
           tipo: ticket.tipo,
-        })); // Formatação dos dados, se necessário
+        }));
         setTickets(formattedData);
       })
       .catch((error) => {
@@ -44,21 +43,13 @@ const Dashboard: React.FC = () => {
       });
   }, []);
 
-  // Função para excluir um ticket
-  const handleDelete = (id: number) => {
-    // Filtra a lista para remover o ticket excluído
-    const updatedTickets = tickets.filter((ticket) => ticket.id !== id);
-    setTickets(updatedTickets); // Atualiza a lista no estado
-
-    // Exclui o ticket no backend
-    axios
-      .delete(`http://localhost:3000/chamados/${id}`)
-      .then(() => {
-        console.log("Chamado excluído com sucesso");
-      })
-      .catch((error) => {
-        console.error("Erro ao excluir chamado:", error);
-      });
+  // Função para mover um chamado para a lista de concluídos
+  const handleComplete = (id: number) => {
+    const completedTicket = tickets.find((ticket) => ticket.id === id); // Encontra o ticket
+    if (completedTicket) {
+      setCompletedTickets([...completedTickets, completedTicket]); // Adiciona à lista de concluídos
+      setTickets(tickets.filter((ticket) => ticket.id !== id)); // Remove da lista principal
+    }
   };
 
   // Contar chamados por tipo
@@ -75,8 +66,6 @@ const Dashboard: React.FC = () => {
     selectedType === "all"
       ? tickets
       : tickets.filter((ticket) => ticket.tipo === selectedType);
-
-  console.log("Tickets filtrados:", filteredTickets); // Log para depuração
 
   return (
     <Box
@@ -153,6 +142,7 @@ const Dashboard: React.FC = () => {
           </Select>
         </Box>
 
+        {/* Lista de chamados */}
         {filteredTickets.length > 0 ? (
           <List>
             {filteredTickets.map((ticket) => (
@@ -163,7 +153,7 @@ const Dashboard: React.FC = () => {
                   <IconButton
                     edge="end"
                     aria-label="delete"
-                    onClick={() => handleDelete(ticket.id)}
+                    onClick={() => handleComplete(ticket.id)}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -187,6 +177,35 @@ const Dashboard: React.FC = () => {
             Nenhum chamado encontrado.
           </Typography>
         )}
+
+        {/* Lista de chamados concluídos */}
+        <Box mt={4}>
+          <Typography variant="h6" fontWeight="bold" color="#2F54EB">
+            Chamados Concluídos
+          </Typography>
+          {completedTickets.length > 0 ? (
+            <List>
+              {completedTickets.map((ticket) => (
+                <ListItem key={ticket.id} divider>
+                  <ListItemText
+                    primary={ticket.descricao}
+                    secondary={`Tipo: ${ticket.tipo}`}
+                    primaryTypographyProps={{
+                      style: { color: "#555", textDecoration: "line-through" },
+                    }}
+                    secondaryTypographyProps={{
+                      style: { color: "#888" },
+                    }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography color="textSecondary" align="center">
+              Nenhum chamado concluído.
+            </Typography>
+          )}
+        </Box>
 
         {/* Botão de novo chamado */}
         <Button
