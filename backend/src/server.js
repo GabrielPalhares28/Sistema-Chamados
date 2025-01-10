@@ -5,11 +5,8 @@ const { sequelize, Chamado } = require('../models');
 const app = express();
 
 // Middleware para habilitar CORS
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'; // Permitir requisições do frontend
-console.log(`CORS configurado para: ${frontendUrl}`);  // Log para depuração do CORS
-
 app.use(cors({
-  origin: frontendUrl, // Permitir requisições do frontend
+  origin: 'http://localhost:5173', // Permitir requisições do frontend
 }));
 
 // Middleware para processar o corpo das requisições
@@ -30,7 +27,7 @@ app.post('/chamados', async (req, res) => {
   console.log('Dados recebidos:', req.body);  // Log de depuração para verificar os dados recebidos
 
   const { descricao, tipo, status } = req.body;
-
+  
   // Verificação de campos obrigatórios
   if (!descricao || !tipo) {
     return res.status(400).send('Descrição e tipo são obrigatórios.');
