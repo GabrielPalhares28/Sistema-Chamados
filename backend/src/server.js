@@ -6,7 +6,7 @@ const app = express();
 
 // Middleware para habilitar CORS
 app.use(cors({
-  origin: 'http://localhost:5173', // Permitir requisições do frontend
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Permitir requisições do frontend
 }));
 
 // Middleware para processar o corpo das requisições
